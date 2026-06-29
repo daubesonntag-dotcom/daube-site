@@ -24,17 +24,19 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+      - name: Select local first launcher
+        run: sed -i 's/\.MainActivity/\.LocalMainActivity/' app/src/main/AndroidManifest.xml
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
       - name: Package
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/DAUBE-Nexus.apk
-          sha256sum release/DAUBE-Nexus.apk > release/DAUBE-Nexus.sha256
-          test -s release/DAUBE-Nexus.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/DAUBE-Nexus-Local-First.apk
+          sha256sum release/DAUBE-Nexus-Local-First.apk > release/DAUBE-Nexus-Local-First.sha256
+          test -s release/DAUBE-Nexus-Local-First.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: DAUBE-Nexus-APK
+          name: DAUBE-Nexus-Local-First-APK
           path: release/*
           if-no-files-found: error
       - name: Publish public release
@@ -42,5 +44,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view nexus-latest >/dev/null 2>&1 && gh release delete nexus-latest --cleanup-tag --yes || true
-          gh release create nexus-latest release/DAUBE-Nexus.apk release/DAUBE-Nexus.sha256 --title "D-AUBE Nexus Android" --notes "Public Android shell with HTTPS ecosystem loading and local offline fallback." --latest
+          gh release view nexus-local-first >/dev/null 2>&1 && gh release delete nexus-local-first --cleanup-tag --yes || true
+          gh release create nexus-local-first release/DAUBE-Nexus-Local-First.apk release/DAUBE-Nexus-Local-First.sha256 --title "D-AUBE Nexus Local First" --notes "Opens the bundled app immediately and does not depend on GitHub Pages." --latest
