@@ -24,23 +24,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
-      - name: Build debug APK
+      - name: Prepare app
+        run: |
+          sed -i 's/\.MainActivity/\.LocalMainActivity/' app/src/main/AndroidManifest.xml
+          sed -i 's#</body>#<script src="backend-client.js"></script></body>#' app/src/main/assets/index.html
+      - name: Build APK
         run: gradle :app:assembleDebug --stacktrace --no-daemon
       - name: Package
         run: |
           mkdir -p release
-          cp app/build/outputs/apk/debug/app-debug.apk release/DAUBE-Nexus.apk
-          sha256sum release/DAUBE-Nexus.apk > release/DAUBE-Nexus.sha256
-          test -s release/DAUBE-Nexus.apk
+          cp app/build/outputs/apk/debug/app-debug.apk release/DAUBE-Nexus-Interactive.apk
+          sha256sum release/DAUBE-Nexus-Interactive.apk > release/DAUBE-Nexus-Interactive.sha256
+          test -s release/DAUBE-Nexus-Interactive.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: DAUBE-Nexus-APK
+          name: DAUBE-Nexus-Interactive-APK
           path: release/*
           if-no-files-found: error
-      - name: Publish public release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release view nexus-latest >/dev/null 2>&1 && gh release delete nexus-latest --cleanup-tag --yes || true
-          gh release create nexus-latest release/DAUBE-Nexus.apk release/DAUBE-Nexus.sha256 --title "D-AUBE Nexus Android" --notes "Public Android shell with HTTPS ecosystem loading and local offline fallback." --latest
